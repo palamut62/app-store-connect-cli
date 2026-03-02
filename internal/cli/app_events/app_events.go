@@ -178,7 +178,7 @@ func AppEventsCreateCommand() *ffcli.Command {
 	publishStart := fs.String("publish-start", "", "Publish start time (RFC3339)")
 	territories := fs.String("territories", "", "Territory codes (comma-separated)")
 	deepLink := fs.String("deep-link", "", "Deep link URL")
-	purchaseRequirement := fs.String("purchase-requirement", "", "Purchase requirement")
+	purchaseRequirement := fs.String("purchase-requirement", "", "Purchase requirement: "+strings.Join(asc.ValidAppEventPurchaseRequirements, ", "))
 	primaryLocale := fs.String("primary-locale", "", "Primary locale (e.g., en-US)")
 	priority := fs.String("priority", "", "Priority: "+strings.Join(asc.ValidAppEventPriorities, ", "))
 	purpose := fs.String("purpose", "", "Purpose: "+strings.Join(asc.ValidAppEventPurposes, ", "))
@@ -226,6 +226,16 @@ Examples:
 				return flag.ErrHelp
 			}
 
+			normalizedPurchaseRequirement, err := normalizeAppEventPurchaseRequirement(*purchaseRequirement)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err.Error())
+				return flag.ErrHelp
+			}
+			if err := validateAppEventPurchaseRequirement(normalizedPurchaseRequirement); err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err.Error())
+				return flag.ErrHelp
+			}
+
 			scheduleProvided := strings.TrimSpace(*start) != "" ||
 				strings.TrimSpace(*end) != "" ||
 				strings.TrimSpace(*publishStart) != "" ||
@@ -257,7 +267,7 @@ Examples:
 				ReferenceName:       nameValue,
 				Badge:               normalizedBadge,
 				DeepLink:            strings.TrimSpace(*deepLink),
-				PurchaseRequirement: strings.TrimSpace(*purchaseRequirement),
+				PurchaseRequirement: normalizedPurchaseRequirement,
 				PrimaryLocale:       strings.TrimSpace(*primaryLocale),
 				Priority:            normalizedPriority,
 				Purpose:             normalizedPurpose,
@@ -294,7 +304,7 @@ func AppEventsUpdateCommand() *ffcli.Command {
 	publishStart := fs.String("publish-start", "", "Publish start time (RFC3339)")
 	territories := fs.String("territories", "", "Territory codes (comma-separated)")
 	deepLink := fs.String("deep-link", "", "Deep link URL")
-	purchaseRequirement := fs.String("purchase-requirement", "", "Purchase requirement")
+	purchaseRequirement := fs.String("purchase-requirement", "", "Purchase requirement: "+strings.Join(asc.ValidAppEventPurchaseRequirements, ", "))
 	primaryLocale := fs.String("primary-locale", "", "Primary locale (e.g., en-US)")
 	priority := fs.String("priority", "", "Priority: "+strings.Join(asc.ValidAppEventPriorities, ", "))
 	purpose := fs.String("purpose", "", "Purpose: "+strings.Join(asc.ValidAppEventPurposes, ", "))
@@ -347,8 +357,17 @@ Examples:
 				hasUpdate = true
 			}
 
-			if strings.TrimSpace(*purchaseRequirement) != "" {
-				value := strings.TrimSpace(*purchaseRequirement)
+			normalizedPurchaseRequirement, err := normalizeAppEventPurchaseRequirement(*purchaseRequirement)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err.Error())
+				return flag.ErrHelp
+			}
+			if err := validateAppEventPurchaseRequirement(normalizedPurchaseRequirement); err != nil {
+				fmt.Fprintln(os.Stderr, "Error:", err.Error())
+				return flag.ErrHelp
+			}
+			if normalizedPurchaseRequirement != "" {
+				value := normalizedPurchaseRequirement
 				attrs.PurchaseRequirement = &value
 				hasUpdate = true
 			}

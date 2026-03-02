@@ -14,6 +14,8 @@ import (
 
 const appEventAssetUploadDefaultTimeout = 10 * time.Minute
 
+var appEventPurchaseRequirementSanitizer = strings.NewReplacer("_", "", "-", "", " ", "")
+
 func normalizeAppEventBadge(value string, required bool) (string, error) {
 	normalized := strings.ToUpper(strings.TrimSpace(value))
 	if normalized == "" {
@@ -48,6 +50,40 @@ func normalizeAppEventPurpose(value string) (string, error) {
 		return normalized, nil
 	}
 	return "", fmt.Errorf("--purpose must be one of: %s", strings.Join(asc.ValidAppEventPurposes, ", "))
+}
+
+func normalizeAppEventPurchaseRequirement(value string) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "", nil
+	}
+
+	token := appEventPurchaseRequirementSanitizer.Replace(strings.ToUpper(trimmed))
+	switch token {
+	case "NOCOSTASSOCIATED":
+		return string(asc.AppEventPurchaseRequirementNoCostAssociated), nil
+	case "NOIAPREQUIRED":
+		return string(asc.AppEventPurchaseRequirementNoIAPRequired), nil
+	case "IAPREQUIRED":
+		return string(asc.AppEventPurchaseRequirementIAPRequired), nil
+	default:
+		return "", fmt.Errorf("--purchase-requirement must be one of: %s", strings.Join(asc.ValidAppEventPurchaseRequirements, ", "))
+	}
+}
+
+func validateAppEventPurchaseRequirement(value string) error {
+	switch value {
+	case "":
+		return nil
+	case string(asc.AppEventPurchaseRequirementNoIAPRequired), string(asc.AppEventPurchaseRequirementIAPRequired):
+		return fmt.Errorf(
+			"--purchase-requirement %s is currently unsupported by App Store Connect API (known 500 UNEXPECTED_ERROR); use %s or omit --purchase-requirement",
+			value,
+			string(asc.AppEventPurchaseRequirementNoCostAssociated),
+		)
+	default:
+		return nil
+	}
 }
 
 func normalizeAppEventAssetType(value string) (string, error) {
