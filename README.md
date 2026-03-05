@@ -111,7 +111,7 @@ asc crashes --app "123456789" --sort -createdDate --limit 10
 ### Builds and distribution
 
 ```bash
-asc builds upload --app "123456789" --file "/path/to/MyApp.ipa"
+asc builds upload --app "123456789" --ipa "/path/to/MyApp.ipa"
 asc testflight builds list --app "123456789" --output table
 ```
 
@@ -147,7 +147,7 @@ asc bundle-ids list
 ### Workflow automation
 
 ```bash
-asc workflow run --file .asc/workflow.json --workflow release
+asc workflow run release
 ```
 
 ## Commands and Reference
