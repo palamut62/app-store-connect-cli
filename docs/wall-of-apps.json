@@ -106,7 +106,7 @@
     "app": "Fuel: AI Nutrition",
     "link": "https://apps.apple.com/app/id6748624107",
     "creator": "0xSMW",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/43/32/e6/4332e644-d8c2-35e1-8916-64392e8774b1/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/9b/de/52/9bde5223-b760-c9c7-3d31-2dcca6bd14fa/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/512x512bb.jpg",
     "platform": ["iOS"]
   },
   {
@@ -117,10 +117,17 @@
     "platform": ["iOS"]
   },
   {
+    "app": "HRM Battery",
+    "link": "https://apps.apple.com/app/id6758920011",
+    "creator": "dnesdan",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/60/00/f8/6000f80c-e382-cc92-442f-5d75385e8343/AppIcon-0-0-1x_U007ewatch-0-1-P3-85-220.png/512x512bb.jpg",
+    "platform": ["watchOS"]
+  },
+  {
     "app": "Inkput",
     "link": "https://apps.apple.com/app/id6758570182",
     "creator": "funclosure",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/76/4a/ea/764aea26-2969-f746-c9bf-722c35b8223b/AppIcon-0-1x_U007epad-0-1-85-220-0.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/16/c2/84/16c2844a-b18c-63bd-328c-6057bc55cd62/AppIcon-0-1x_U007epad-0-1-85-220-0.png/512x512bb.jpg",
     "platform": ["iOS", "macOS"]
   },
   {
@@ -197,7 +204,7 @@
     "app": "Morning Pages",
     "link": "https://apps.apple.com/us/app/morning-pages/id6738604034",
     "creator": "zchwyng",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/d7/6d/14/d76d1421-b875-20c8-273c-2147f685e680/app-icon-0-0-1x_U007epad-0-1-sRGB-85-220.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c5/ec/37/c5ec371e-e920-33ec-1541-74d05fc067c2/app-icon-0-0-1x_U007epad-0-1-sRGB-85-220.png/512x512bb.jpg",
     "platform": ["iOS", "macOS"]
   },
   {
@@ -273,7 +280,7 @@
     "app": "Reloop - AI Transcribe & Speak",
     "link": "https://apps.apple.com/us/app/reloop-ai-transcribe-speak/id6752853818",
     "creator": "wuqinqiang",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/4a/82/b0/4a82b04f-13e8-e968-d81b-490a791ccefe/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/2e/57/88/2e5788c4-8164-e931-a976-fba05975baac/AppIcon-0-0-1x_U007emarketing-0-11-0-85-220.png/512x512bb.jpg",
     "platform": ["iOS"]
   },
   {
@@ -343,7 +350,7 @@
     "app": "text to speech · speakeasy",
     "link": "https://apps.apple.com/app/id6758816495",
     "creator": "supnim",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/58/b7/a3/58b7a3e5-c045-888b-2c83-5561b920841c/speakeasy-icon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0a/49/48/0a49486e-92b3-37b5-8bb8-c038aee9a0a4/speakeasy-icon-0-0-1x_U007ephone-0-1-sRGB-85-220.png/512x512bb.jpg",
     "platform": ["iOS"]
   },
   {
@@ -406,7 +413,7 @@
     "app": "Weather mini - Trip Forecasts",
     "link": "https://apps.apple.com/us/app/weather-mini-trip-forecasts/id892589817",
     "creator": "Kai Luo",
-    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/41/1a/b0/411ab0ad-3dcb-52d1-78a7-4c8aec5a7c89/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/d7/cf/fb/d7cffb54-2e0d-f5c4-41ed-b583347b7393/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-85-220.png/512x512bb.jpg",
     "platform": ["iOS", "macOS", "visionOS"]
   },
   {
