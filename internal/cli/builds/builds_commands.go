@@ -381,6 +381,7 @@ Examples:
   asc builds latest --app "123456789"
   asc builds find --app "123456789" --build-number "42"
   asc builds wait --build "BUILD_ID"
+  asc builds wait --app "123456789" --newest
   asc builds info --build "BUILD_ID"
   asc builds expire --build "BUILD_ID"
   asc builds expire-all --app "123456789" --older-than 90d --dry-run

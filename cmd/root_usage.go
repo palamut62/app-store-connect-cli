@@ -70,7 +70,7 @@ var rootUsageGroups = []rootCommandGroup{
 	},
 	{
 		title:    "UTILITY COMMANDS",
-		commands: []string{"version", "completion"},
+		commands: []string{"version", "completion", "schema"},
 	},
 }
 

@@ -47,7 +47,7 @@ https://appstoreconnect.apple.com/access/integrations/api
   - `asc feedback --app "123456789" --paginate`
   - `asc crashes --app "123456789" --sort -createdDate --limit 10`
 - Builds and distribution:
-  - `asc builds upload --app "123456789" --file "/path/to/MyApp.ipa"`
+  - `asc builds upload --app "123456789" --ipa "/path/to/MyApp.ipa"`
   - `asc testflight builds list --app "123456789" --output table`
 - Validate and submit:
   - `asc validate --app "123456789" --version "1.2.3"`
@@ -63,7 +63,7 @@ https://appstoreconnect.apple.com/access/integrations/api
   - `asc profiles list`
   - `asc bundle-ids list`
 - Workflow automation:
-  - `asc workflow run --file .asc/workflow.json --workflow release`
+  - `asc workflow run release`
 
 ## CI/CD integrations
 
@@ -111,7 +111,11 @@ Common operational variables:
 - `ASC_DEBUG` (set to `api` for HTTP request/response logs)
 - `ASC_DEFAULT_OUTPUT` (`json`, `table`, `markdown`, `md`)
 
-Explicit `--output` always overrides `ASC_DEFAULT_OUTPUT`.
+Output defaults are TTY-aware when `ASC_DEFAULT_OUTPUT` is unset:
+- interactive terminal (TTY) => `table`
+- non-interactive/piped output => `json`
+
+Explicit `--output` always overrides `ASC_DEFAULT_OUTPUT` and TTY-aware defaults.
 
 ## Development and local validation
 

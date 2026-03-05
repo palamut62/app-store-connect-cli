@@ -1496,6 +1496,45 @@ func TestPrintMarkdown_LocalizationUploadResult(t *testing.T) {
 	}
 }
 
+func TestPrintTable_AppInfoSetBatchResult(t *testing.T) {
+	result := &AppInfoSetBatchResult{
+		Results: []AppInfoSetLocaleResult{
+			{Locale: "en-US", Action: "update", Status: "success", LocalizationID: "loc-en"},
+			{Locale: "de-DE", Action: "create", Status: "failed", Error: "validation failed"},
+		},
+	}
+
+	output := captureStdout(t, func() error {
+		return PrintTable(result)
+	})
+
+	if !strings.Contains(output, "Status") || !strings.Contains(output, "Error") {
+		t.Fatalf("expected app-info set batch headers, got: %s", output)
+	}
+	if !strings.Contains(output, "loc-en") || !strings.Contains(output, "validation failed") {
+		t.Fatalf("expected row values in output, got: %s", output)
+	}
+}
+
+func TestPrintMarkdown_AppInfoSetBatchResult(t *testing.T) {
+	result := &AppInfoSetBatchResult{
+		Results: []AppInfoSetLocaleResult{
+			{Locale: "en-US", Action: "update", Status: "planned", LocalizationID: "loc-en"},
+		},
+	}
+
+	output := captureStdout(t, func() error {
+		return PrintMarkdown(result)
+	})
+
+	if !strings.Contains(output, "Locale") || !strings.Contains(output, "Status") {
+		t.Fatalf("expected markdown header, got: %s", output)
+	}
+	if !strings.Contains(output, "planned") {
+		t.Fatalf("expected planned status in output, got: %s", output)
+	}
+}
+
 func TestPrintTable_AppTags(t *testing.T) {
 	resp := &AppTagsResponse{
 		Data: []Resource[AppTagAttributes]{

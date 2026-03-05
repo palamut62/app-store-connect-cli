@@ -141,6 +141,7 @@ asc <subcommand> [flags]
 
 - `version` - Print version information and exit.
 - `completion` - Print shell completion scripts.
+- `schema` - Inspect App Store Connect API endpoint schemas at runtime.
 
 ### Additional
 
@@ -152,8 +153,9 @@ asc <subcommand> [flags]
 
 ## Scripting Tips
 
-- JSON output is minified by default and optimized for machine parsing.
-- Use `--output table` or `--output markdown` for human-readable output.
+- Output defaults are TTY-aware: interactive terminals default to `table`, while piped/non-interactive output defaults to minified `json`.
+- Use `--output table` or `--output markdown` for explicit human-readable output.
+- Use `--output json` for explicit machine-readable output.
 - Use `--paginate` on list commands to fetch all pages automatically.
 - Use `--limit` and `--next` for manual pagination control.
 - Prefer explicit flags and deterministic outputs in CI scripts.
@@ -165,14 +167,14 @@ asc <subcommand> [flags]
 asc apps list --output table
 
 # Upload a build
-asc builds upload --app "123456789" --file "/path/to/MyApp.ipa"
+asc builds upload --app "123456789" --ipa "/path/to/MyApp.ipa"
 
 # Validate and submit an App Store version
 asc validate --app "123456789" --version "1.2.3"
 asc submit --app "123456789" --version "1.2.3"
 
 # Run a local automation workflow
-asc workflow run --file .asc/workflow.json --workflow release
+asc workflow run release
 ```
 
 ## Related Documentation

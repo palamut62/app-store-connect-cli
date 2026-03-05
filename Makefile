@@ -151,6 +151,11 @@ update-openapi:
 	@echo "$(BLUE)Updating OpenAPI paths index...$(NC)"
 	python3 scripts/update-openapi-index.py
 
+.PHONY: update-schema-index
+update-schema-index:
+	@echo "$(BLUE)Updating schema index...$(NC)"
+	python3 scripts/generate-schema-index.py
+
 # Generate app metadata and sync Wall docs
 .PHONY: generate
 generate:

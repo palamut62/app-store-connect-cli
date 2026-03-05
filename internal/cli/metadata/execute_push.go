@@ -13,6 +13,7 @@ import (
 // PushExecutionOptions controls metadata push planning and apply behavior.
 type PushExecutionOptions struct {
 	AppID        string
+	AppInfoID    string
 	Version      string
 	Platform     string
 	Dir          string
@@ -73,11 +74,23 @@ func ExecutePush(ctx context.Context, opts PushExecutionOptions) (PushPlanResult
 	requestCtx, cancel := shared.ContextWithTimeout(ctx)
 	defer cancel()
 
-	appInfoIDValue, err := shared.ResolveAppInfoID(requestCtx, client, resolvedAppID, "")
+	versionIDValue, versionStateValue, err := resolveVersionID(requestCtx, client, resolvedAppID, versionValue, platformValue)
 	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return PushPlanResult{}, err
+		}
 		return PushPlanResult{}, fmt.Errorf("metadata push: %w", err)
 	}
-	versionIDValue, err := resolveVersionID(requestCtx, client, resolvedAppID, versionValue, platformValue)
+	appInfoIDValue, err := resolveMetadataPushAppInfoID(
+		requestCtx,
+		client,
+		resolvedAppID,
+		strings.TrimSpace(opts.AppInfoID),
+		versionValue,
+		platformValue,
+		dirValue,
+		versionStateValue,
+	)
 	if err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return PushPlanResult{}, err

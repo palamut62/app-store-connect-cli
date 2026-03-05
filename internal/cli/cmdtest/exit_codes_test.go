@@ -226,7 +226,7 @@ func TestRun_UsageValidationErrorsReturnExitUsage(t *testing.T) {
 		{
 			name:    "builds wait missing selector",
 			args:    []string{"builds", "wait"},
-			wantErr: "--build is required, or provide --app and --build-number",
+			wantErr: "--app is required when --build is not provided",
 		},
 		{
 			name:    "builds find missing build-number",

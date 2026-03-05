@@ -733,8 +733,9 @@ var (
 )
 
 // DefaultOutputFormat returns the default output format for CLI commands.
-// It checks the ASC_DEFAULT_OUTPUT environment variable first, falling back to "json".
-// Valid values are "json", "table", "markdown", and "md".
+// It checks ASC_DEFAULT_OUTPUT first. When unset, interactive terminals default
+// to table output and non-interactive contexts default to JSON.
+// Valid ASC_DEFAULT_OUTPUT values are "json", "table", "markdown", and "md".
 func DefaultOutputFormat() string {
 	defaultOutputOnce.Do(func() {
 		defaultOutputValue = resolveDefaultOutput()
@@ -745,6 +746,9 @@ func DefaultOutputFormat() string {
 func resolveDefaultOutput() string {
 	env := strings.TrimSpace(os.Getenv(defaultOutputEnvVar))
 	if env == "" {
+		if isTerminal(int(os.Stdout.Fd())) {
+			return "table"
+		}
 		return "json"
 	}
 	normalized := strings.ToLower(env)
@@ -776,7 +780,7 @@ func BindPrettyJSONFlag(fs *flag.FlagSet) *bool {
 
 // BindOutputFlags registers --output and --pretty flags on the provided flagset.
 func BindOutputFlags(fs *flag.FlagSet) OutputFlags {
-	return BindOutputFlagsWith(fs, "output", DefaultOutputFormat(), "Output format: json (default), table, markdown")
+	return BindOutputFlagsWith(fs, "output", DefaultOutputFormat(), "Output format: json, table, markdown")
 }
 
 // BindMetadataOutputFlags registers --output-format and --pretty flags on the provided flagset.

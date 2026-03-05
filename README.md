@@ -62,13 +62,32 @@ https://appstoreconnect.apple.com/access/integrations/api
 ### First command
 
 ```bash
-asc apps list --output table
+asc apps list
+```
+
+### Output defaults (TTY-aware)
+
+`asc` chooses a default `--output` based on where stdout is connected:
+
+- Interactive terminal (TTY): `table`
+- Non-interactive output (pipes/files/CI): `json`
+
+You can still set a global preference:
+
+```bash
+export ASC_DEFAULT_OUTPUT=markdown
+```
+
+And explicit flags always win:
+
+```bash
+asc apps list --output json
 ```
 
 <!-- WALL-OF-APPS:START -->
 ## Wall of Apps
 
-**53 apps ship with asc.** [See the Wall of Apps →](https://asccli.sh/#wall-of-apps)
+**61 apps ship with asc.** [See the Wall of Apps →](https://asccli.sh/#wall-of-apps)
 
 Want to add yours? [Open a PR](https://github.com/rudrankriyam/App-Store-Connect-CLI/pulls).
 <!-- WALL-OF-APPS:END -->
@@ -92,7 +111,7 @@ asc crashes --app "123456789" --sort -createdDate --limit 10
 ### Builds and distribution
 
 ```bash
-asc builds upload --app "123456789" --file "/path/to/MyApp.ipa"
+asc builds upload --app "123456789" --ipa "/path/to/MyApp.ipa"
 asc testflight builds list --app "123456789" --output table
 ```
 
@@ -128,7 +147,7 @@ asc bundle-ids list
 ### Workflow automation
 
 ```bash
-asc workflow run --file .asc/workflow.json --workflow release
+asc workflow run release
 ```
 
 ## Commands and Reference
