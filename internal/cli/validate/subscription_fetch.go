@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/asc"
@@ -101,6 +102,15 @@ func subscriptionHasImage(ctx context.Context, client *asc.Client, subscriptionI
 		if asc.IsNotFound(err) {
 			return subscriptionImageStatus{Verified: true}, nil
 		}
+		if errors.Is(err, context.Canceled) {
+			return subscriptionImageStatus{}, err
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return subscriptionImageStatus{
+				Verified:   false,
+				SkipReason: "Image verification was skipped because the App Store Connect image endpoint timed out",
+			}, nil
+		}
 		if errors.Is(err, asc.ErrForbidden) || asc.IsUnauthorized(err) {
 			return subscriptionImageStatus{
 				Verified:   false,
@@ -111,6 +121,13 @@ func subscriptionHasImage(ctx context.Context, client *asc.Client, subscriptionI
 			return subscriptionImageStatus{
 				Verified:   false,
 				SkipReason: "Image verification was skipped because the App Store Connect image endpoint was temporarily unavailable or rate limited",
+			}, nil
+		}
+		var netErr net.Error
+		if errors.As(err, &netErr) {
+			return subscriptionImageStatus{
+				Verified:   false,
+				SkipReason: "Image verification was skipped because the App Store Connect image endpoint could not be reached",
 			}, nil
 		}
 		return subscriptionImageStatus{}, err
