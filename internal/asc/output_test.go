@@ -37,12 +37,18 @@ func captureStdout(t *testing.T, fn func() error) string {
 	return buf.String()
 }
 
-func assertRenderedContains(t *testing.T, render func(any) error, data any, want ...string) {
+func assertRenderedNonJSONContains(t *testing.T, render func(any) error, data any, want ...string) {
 	t.Helper()
 
 	output := captureStdout(t, func() error {
 		return render(data)
 	})
+	trimmed := strings.TrimSpace(output)
+
+	var parsed any
+	if err := json.Unmarshal([]byte(trimmed), &parsed); err == nil {
+		t.Fatalf("expected non-JSON rendered output, got JSON: %s", output)
+	}
 
 	for _, token := range want {
 		if !strings.Contains(output, token) {
@@ -139,7 +145,7 @@ func TestPrintTableAndMarkdown_RepresentativeResponses(t *testing.T) {
 			for _, renderer := range renderers {
 				renderer := renderer
 				t.Run(renderer.name, func(t *testing.T) {
-					assertRenderedContains(t, renderer.fn, tc.data, tc.want...)
+					assertRenderedNonJSONContains(t, renderer.fn, tc.data, tc.want...)
 				})
 			}
 		})
@@ -194,7 +200,7 @@ func TestPrintTableAndMarkdown_BuildsEmptyStillShowsHeaders(t *testing.T) {
 	for _, renderer := range renderers {
 		renderer := renderer
 		t.Run(renderer.name, func(t *testing.T) {
-			assertRenderedContains(t, renderer.fn, resp, "ID", "Version", "Processing")
+			assertRenderedNonJSONContains(t, renderer.fn, resp, "ID", "Version", "Processing")
 		})
 	}
 }
@@ -351,7 +357,7 @@ func TestPrintTableAndMarkdown_BuildUploadResultIncludesOperations(t *testing.T)
 	for _, renderer := range renderers {
 		renderer := renderer
 		t.Run(renderer.name, func(t *testing.T) {
-			assertRenderedContains(t, renderer.fn, resp, "UPLOAD_123", "PUT")
+			assertRenderedNonJSONContains(t, renderer.fn, resp, "UPLOAD_123", "PUT")
 		})
 	}
 }
