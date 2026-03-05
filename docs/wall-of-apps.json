@@ -96,6 +96,13 @@
     "platform": ["iOS", "macOS"]
   },
   {
+    "app": "FPLai: FPL AI Assistant",
+    "link": "https://apps.apple.com/app/id6757015527",
+    "creator": "Yago Martinez",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/a3/a3/19/a3a31917-1ef0-2d81-3150-65391212a1bd/AppIcon-0-0-1x_U007epad-0-1-85-220.png/512x512bb.jpg",
+    "platform": ["iOS"]
+  },
+  {
     "app": "Fuel: AI Nutrition",
     "link": "https://apps.apple.com/app/id6748624107",
     "creator": "0xSMW",
