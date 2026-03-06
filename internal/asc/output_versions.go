@@ -142,13 +142,14 @@ func appStoreVersionDetailRows(result *AppStoreVersionDetailResult) ([]string, [
 }
 
 func appStoreVersionPhasedReleaseRows(resp *AppStoreVersionPhasedReleaseResponse) ([]string, [][]string) {
-	headers := []string{"Phased Release ID", "State", "Start Date", "Current Day", "Total Pause Duration"}
+	headers := []string{"Phased Release ID", "State", "Start Date", "Current Day", "Progress", "Total Pause Duration"}
 	attrs := resp.Data.Attributes
 	rows := [][]string{{
 		resp.Data.ID,
 		string(attrs.PhasedReleaseState),
 		attrs.StartDate,
 		fmt.Sprintf("%d", attrs.CurrentDayNumber),
+		FormatPhasedReleaseProgressBar(attrs.CurrentDayNumber),
 		fmt.Sprintf("%d", attrs.TotalPauseDuration),
 	}}
 	return headers, rows
