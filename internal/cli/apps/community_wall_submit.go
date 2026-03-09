@@ -193,10 +193,7 @@ Examples:
 				return flag.ErrHelp
 			}
 
-			requestCtx, cancel := shared.ContextWithTimeout(ctx)
-			defer cancel()
-
-			token, ghLogin, err := resolveCommunityWallGitHubIdentity(requestCtx)
+			token, ghLogin, err := resolveCommunityWallGitHubIdentity(ctx)
 			if err != nil {
 				return fmt.Errorf("apps wall submit: %w", err)
 			}
@@ -209,6 +206,9 @@ Examples:
 				}
 				return fmt.Errorf("apps wall submit: %w", err)
 			}
+
+			requestCtx, cancel := shared.ContextWithTimeout(ctx)
+			defer cancel()
 
 			result, err := submitCommunityWallEntry(requestCtx, communityWallSubmitRequest{
 				Input:       input,
@@ -544,7 +544,12 @@ func submitCommunityWallEntry(ctx context.Context, req communityWallSubmitReques
 	}
 	result.WillCreateFork = !forkExists
 
-	upstreamContent, upstreamFileSHA, err := client.fileContents(ctx, communityWallUpstreamOwner, communityWallUpstreamRepo, communityWallSourcePath, communityWallUpstreamBranch)
+	baseRefSHA, err := client.refSHA(ctx, communityWallUpstreamOwner, communityWallUpstreamRepo, "heads/"+communityWallUpstreamBranch)
+	if err != nil {
+		return nil, err
+	}
+
+	upstreamContent, upstreamFileSHA, err := client.fileContents(ctx, communityWallUpstreamOwner, communityWallUpstreamRepo, communityWallSourcePath, baseRefSHA)
 	if err != nil {
 		return nil, err
 	}
@@ -576,10 +581,6 @@ func submitCommunityWallEntry(ctx context.Context, req communityWallSubmitReques
 		result.CreatedFork = true
 	}
 
-	baseRefSHA, err := client.refSHA(ctx, communityWallUpstreamOwner, communityWallUpstreamRepo, "heads/"+communityWallUpstreamBranch)
-	if err != nil {
-		return nil, err
-	}
 	if err := client.createBranch(ctx, req.GitHubLogin, communityWallUpstreamRepo, branch, baseRefSHA); err != nil {
 		return nil, err
 	}

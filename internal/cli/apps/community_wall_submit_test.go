@@ -53,9 +53,15 @@ func TestSubmitCommunityWallEntryDryRunReturnsPlan(t *testing.T) {
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/repos/tester/App-Store-Connect-CLI":
 			http.NotFound(w, r)
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/git/ref/heads/main":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"object": map[string]any{
+					"sha": "base-sha-123",
+				},
+			})
 		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/contents/docs/wall-of-apps.json":
-			if got := r.URL.Query().Get("ref"); got != "main" {
-				t.Fatalf("expected ref=main, got %q", got)
+			if got := r.URL.Query().Get("ref"); got != "base-sha-123" {
+				t.Fatalf("expected ref=base-sha-123, got %q", got)
 			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"sha":      "blob123",
@@ -145,7 +151,16 @@ func TestSubmitCommunityWallEntryRejectsDuplicateAppID(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/repos/tester/App-Store-Connect-CLI":
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte(`{"full_name":"tester/App-Store-Connect-CLI"}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/git/ref/heads/main":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"object": map[string]any{
+					"sha": "base-sha-123",
+				},
+			})
 		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/contents/docs/wall-of-apps.json":
+			if got := r.URL.Query().Get("ref"); got != "base-sha-123" {
+				t.Fatalf("expected ref=base-sha-123, got %q", got)
+			}
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"sha":      "blob123",
 				"encoding": "base64",
