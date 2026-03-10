@@ -238,6 +238,19 @@ func TestRun_UsageValidationErrorsReturnExitUsage(t *testing.T) {
 			args:    []string{"builds", "find", "--app", "APP_123"},
 			wantErr: "--build-number is required",
 		},
+		{
+			name: "apps wall submit parent wall flags",
+			args: []string{
+				"apps", "wall",
+				"--include-platforms", "iOS",
+				"--output", "markdown",
+				"submit",
+				"--app", "1234567890",
+				"--platform", "iOS",
+				"--dry-run",
+			},
+			wantErr: `apps wall submit does not accept parent wall flags (--include-platforms, --output)`,
+		},
 	}
 
 	for _, test := range tests {

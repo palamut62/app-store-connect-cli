@@ -209,6 +209,79 @@ func TestSubmitCommunityWallEntryRejectsDuplicateAppID(t *testing.T) {
 	}
 }
 
+func TestSubmitCommunityWallEntryRejectsMalformedExistingSource(t *testing.T) {
+	sourceJSON := `[
+  {
+    "app": "Alpha",
+    "link": "https://example.com/alpha",
+    "creator": "",
+    "platform": ["iOS"]
+  }
+]`
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/tester/App-Store-Connect-CLI":
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"full_name":"tester/App-Store-Connect-CLI","fork":true,"parent":{"full_name":"rudrankriyam/App-Store-Connect-CLI"}}`))
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/git/ref/heads/main":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"object": map[string]any{
+					"sha": "base-sha-123",
+				},
+			})
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/rudrankriyam/App-Store-Connect-CLI/contents/docs/wall-of-apps.json":
+			if got := r.URL.Query().Get("ref"); got != "base-sha-123" {
+				t.Fatalf("expected ref=base-sha-123, got %q", got)
+			}
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"sha":      "blob123",
+				"encoding": "base64",
+				"content":  base64.StdEncoding.EncodeToString([]byte(sourceJSON)),
+			})
+		default:
+			t.Fatalf("unexpected request: %s %s", r.Method, r.URL.String())
+		}
+	}))
+	defer server.Close()
+
+	previousAPIBase := communityWallGitHubAPIBase
+	previousHTTPClient := communityWallGitHubClient
+	previousLookupDetails := communityWallLookupAppDetails
+	communityWallGitHubAPIBase = server.URL
+	communityWallGitHubClient = func() *http.Client { return server.Client() }
+	communityWallLookupAppDetails = func(ctx context.Context, ids []string) (map[string]communityWallAppDetails, error) {
+		return map[string]communityWallAppDetails{
+			"1234567890": {
+				Name: "Beta",
+				Link: "https://apps.apple.com/us/app/beta/id1234567890",
+			},
+		}, nil
+	}
+	t.Cleanup(func() {
+		communityWallGitHubAPIBase = previousAPIBase
+		communityWallGitHubClient = previousHTTPClient
+		communityWallLookupAppDetails = previousLookupDetails
+	})
+
+	_, err := submitCommunityWallEntry(context.Background(), communityWallSubmitRequest{
+		Input: communityWallSubmitInput{
+			AppID:    "1234567890",
+			Creator:  "tester",
+			Platform: []string{"iOS"},
+		},
+		GitHubToken: "token",
+		GitHubLogin: "tester",
+		DryRun:      true,
+	})
+	if err == nil {
+		t.Fatal("expected malformed source error")
+	}
+	if !strings.Contains(err.Error(), "entry #1: 'creator' is required") {
+		t.Fatalf("expected source validation error, got %v", err)
+	}
+}
+
 func TestSubmitCommunityWallEntryRejectsExistingNonForkRepo(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet || r.URL.Path != "/repos/tester/App-Store-Connect-CLI" {

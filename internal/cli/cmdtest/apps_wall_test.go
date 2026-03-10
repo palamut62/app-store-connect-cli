@@ -132,6 +132,40 @@ func TestAppsWallSubmitRejectsParentWallFlags(t *testing.T) {
 	}
 }
 
+func TestAppsWallSubmitRejectsMultipleParentWallFlags(t *testing.T) {
+	root := RootCommand("1.2.3")
+	root.FlagSet.SetOutput(io.Discard)
+
+	var runErr error
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{
+			"apps", "wall",
+			"--include-platforms", "iOS",
+			"--output", "markdown",
+			"submit",
+			"--app", "1234567890",
+			"--platform", "iOS",
+			"--dry-run",
+		}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		runErr = root.Run(context.Background())
+	})
+
+	if !errors.Is(runErr, flag.ErrHelp) {
+		t.Fatalf("expected ErrHelp, got %v", runErr)
+	}
+	if stdout != "" {
+		t.Fatalf("expected empty stdout, got %q", stdout)
+	}
+	if !strings.Contains(stderr, "apps wall submit does not accept parent wall flags") {
+		t.Fatalf("expected parent flag guidance in stderr, got %q", stderr)
+	}
+	if !strings.Contains(stderr, "--include-platforms, --output") {
+		t.Fatalf("expected sorted offending flags in stderr, got %q", stderr)
+	}
+}
+
 func TestAppsShowcaseRemoved(t *testing.T) {
 	root := RootCommand("1.2.3")
 	root.FlagSet.SetOutput(io.Discard)

@@ -169,7 +169,7 @@ Examples:
 			requestCtx, cancel := shared.ContextWithTimeoutDuration(ctx, timeoutValue)
 			defer cancel()
 
-			resolvedGroupIDs, err := resolvePublishBetaGroupIDs(requestCtx, client, resolvedAppID, parsedGroupIDs)
+			resolvedGroups, err := resolvePublishBetaGroups(requestCtx, client, resolvedAppID, parsedGroupIDs)
 			if err != nil {
 				return fmt.Errorf("publish testflight: %w", err)
 			}
@@ -230,7 +230,10 @@ Examples:
 				}
 			}
 
-			if err := client.AddBetaGroupsToBuildWithNotify(requestCtx, buildResp.Data.ID, resolvedGroupIDs, *notify); err != nil {
+			addResult, err := shared.AddBuildBetaGroups(requestCtx, client, buildResp.Data.ID, resolvedGroups, shared.AddBuildBetaGroupsOptions{
+				Notify: *notify,
+			})
+			if err != nil {
 				return fmt.Errorf("publish testflight: failed to add groups: %w", err)
 			}
 
@@ -238,7 +241,7 @@ Examples:
 				BuildID:         buildResp.Data.ID,
 				BuildVersion:    resolvedVersionValue,
 				BuildNumber:     resolvedBuildNumberValue,
-				GroupIDs:        resolvedGroupIDs,
+				GroupIDs:        addResult.AddedGroupIDs,
 				Uploaded:        uploaded,
 				ProcessingState: buildResp.Data.Attributes.ProcessingState,
 				Notified:        *notify,
