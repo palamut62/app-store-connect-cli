@@ -92,6 +92,16 @@ func rewriteCommandPresentation(cmd *ffcli.Command, oldRootPath, newRootPath str
 	return cmd
 }
 
+func rewriteCommandStringsOnly(cmd *ffcli.Command, oldRootPath, newRootPath string, nameRenames map[string]string) *ffcli.Command {
+	if cmd == nil {
+		return nil
+	}
+
+	pathReplacements := collectCommandPathReplacements(cmd, oldRootPath, newRootPath, nameRenames)
+	rewriteCommandStrings(cmd, pathReplacements)
+	return cmd
+}
+
 func collectCommandPathReplacements(cmd *ffcli.Command, oldRootPath, newRootPath string, nameRenames map[string]string) []textReplacement {
 	replacements := []textReplacement{}
 
@@ -223,6 +233,21 @@ func findSubcommand(cmd *ffcli.Command, name string) *ffcli.Command {
 		}
 	}
 	return nil
+}
+
+func appendDeprecatedLeafAlias(parent *ffcli.Command, oldName, newName, shortUsage, newCommand, warning string) {
+	if parent == nil {
+		return
+	}
+	if alias := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(parent, oldName),
+		newName,
+		shortUsage,
+		newCommand,
+		warning,
+	); alias != nil {
+		parent.Subcommands = append(parent.Subcommands, alias)
+	}
 }
 
 func deprecatedAliasCommand(cmd *ffcli.Command, shortUsage, shortHelp, longHelp string) *ffcli.Command {
@@ -649,31 +674,49 @@ Examples:
 
 func DeprecatedBetaDetailsAliasCommand() *ffcli.Command {
 	cmd := deprecatedAliasCommand(
-		TestFlightBetaDetailsCommand(),
+		rewriteCommandStringsOnly(
+			TestFlightBetaDetailsCommand(),
+			"asc testflight beta-details",
+			"asc testflight distribution",
+			map[string]string{
+				"beta-details": "distribution",
+				"get":          "view",
+				"update":       "edit",
+			},
+		),
 		"asc testflight distribution <subcommand> [flags]",
 		"Compatibility alias: use `asc testflight distribution`.",
 		"Compatibility alias: use `asc testflight distribution ...`.",
 	)
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
-
-	if viewCmd := findSubcommand(cmd, "get"); viewCmd != nil {
-		viewCmd.ShortUsage = "asc testflight distribution view [flags]"
-		viewCmd.ShortHelp = "Compatibility alias: use `asc testflight distribution view`."
-		viewCmd.LongHelp = "Compatibility alias: use `asc testflight distribution view --build BUILD_ID`."
+	markDeprecatedSubcommands(cmd)
+	if viewCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "get"),
+		"view",
+		"asc testflight distribution view [flags]",
+		"asc testflight distribution view",
+		"Warning: `asc testflight beta-details view` is deprecated. Use `asc testflight distribution view`.",
+	); viewCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, viewCmd)
 	}
-	if editCmd := findSubcommand(cmd, "update"); editCmd != nil {
-		editCmd.ShortUsage = "asc testflight distribution edit [flags]"
-		editCmd.ShortHelp = "Compatibility alias: use `asc testflight distribution edit`."
-		editCmd.LongHelp = "Compatibility alias: use `asc testflight distribution edit --id DETAIL_ID ...`."
+	if editCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "update"),
+		"edit",
+		"asc testflight distribution edit [flags]",
+		"asc testflight distribution edit",
+		"Warning: `asc testflight beta-details edit` is deprecated. Use `asc testflight distribution edit`.",
+	); editCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, editCmd)
 	}
 	if buildCmd := findSubcommand(cmd, "build"); buildCmd != nil {
-		buildCmd.ShortUsage = "asc testflight distribution build <subcommand> [flags]"
-		buildCmd.ShortHelp = "Compatibility alias: use `asc testflight distribution build view`."
-		buildCmd.LongHelp = "Compatibility alias: use `asc testflight distribution build view --id DETAIL_ID`."
-		if getCmd := findSubcommand(buildCmd, "get"); getCmd != nil {
-			getCmd.ShortUsage = "asc testflight distribution build view --id \"DETAIL_ID\""
-			getCmd.ShortHelp = "Compatibility alias: use `asc testflight distribution build view`."
-			getCmd.LongHelp = "Compatibility alias: use `asc testflight distribution build view --id DETAIL_ID`."
+		if viewCmd := shared.DeprecatedAliasLeafCommand(
+			findSubcommand(buildCmd, "get"),
+			"view",
+			"asc testflight distribution build view --id \"DETAIL_ID\"",
+			"asc testflight distribution build view",
+			"Warning: `asc testflight beta-details build view` is deprecated. Use `asc testflight distribution build view`.",
+		); viewCmd != nil {
+			buildCmd.Subcommands = append(buildCmd.Subcommands, viewCmd)
 		}
 	}
 	return cmd
@@ -731,6 +774,52 @@ func DeprecatedBetaGroupsAliasCommand() *ffcli.Command {
 	}
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
 	markDeprecatedSubcommands(cmd)
+	appendDeprecatedLeafAlias(
+		cmd,
+		"get",
+		"view",
+		"asc testflight groups view [flags]",
+		"asc testflight groups view",
+		"Warning: `asc testflight beta-groups view` is deprecated. Use `asc testflight groups view`.",
+	)
+	appendDeprecatedLeafAlias(
+		cmd,
+		"update",
+		"edit",
+		"asc testflight groups edit [flags]",
+		"asc testflight groups edit",
+		"Warning: `asc testflight beta-groups edit` is deprecated. Use `asc testflight groups edit`.",
+	)
+	if appCmd := findSubcommand(cmd, "app"); appCmd != nil {
+		appendDeprecatedLeafAlias(
+			appCmd,
+			"get",
+			"view",
+			"asc testflight groups app view --group-id \"GROUP_ID\"",
+			"asc testflight groups app view",
+			"Warning: `asc testflight beta-groups app view` is deprecated. Use `asc testflight groups app view`.",
+		)
+	}
+	if recruitmentCmd := findSubcommand(cmd, "beta-recruitment-criteria"); recruitmentCmd != nil {
+		appendDeprecatedLeafAlias(
+			recruitmentCmd,
+			"get",
+			"view",
+			"asc testflight groups recruitment view --group-id \"GROUP_ID\"",
+			"asc testflight groups recruitment view",
+			"Warning: `asc testflight beta-groups beta-recruitment-criteria view` is deprecated. Use `asc testflight groups recruitment view`.",
+		)
+	}
+	if compatibilityCmd := findSubcommand(cmd, "beta-recruitment-criterion-compatible-build-check"); compatibilityCmd != nil {
+		appendDeprecatedLeafAlias(
+			compatibilityCmd,
+			"get",
+			"view",
+			"asc testflight groups compatibility view --group-id \"GROUP_ID\"",
+			"asc testflight groups compatibility view",
+			"Warning: `asc testflight beta-groups beta-recruitment-criterion-compatible-build-check view` is deprecated. Use `asc testflight groups compatibility view`.",
+		)
+	}
 	return cmd
 }
 
@@ -765,12 +854,20 @@ func DeprecatedBetaTestersAliasCommand() *ffcli.Command {
 	}
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
 	markDeprecatedSubcommands(cmd)
+	appendDeprecatedLeafAlias(
+		cmd,
+		"get",
+		"view",
+		"asc testflight testers view [flags]",
+		"asc testflight testers view",
+		"Warning: `asc testflight beta-testers view` is deprecated. Use `asc testflight testers view`.",
+	)
 	return cmd
 }
 
 func DeprecatedBetaLicenseAgreementsAliasCommand() *ffcli.Command {
 	cmd := deprecatedAliasCommand(
-		rewriteCommandPresentation(
+		rewriteCommandStringsOnly(
 			BetaLicenseAgreementsCommand(),
 			"asc testflight beta-license-agreements",
 			"asc testflight agreements",
@@ -786,12 +883,30 @@ func DeprecatedBetaLicenseAgreementsAliasCommand() *ffcli.Command {
 	)
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
 	markDeprecatedSubcommands(cmd)
+	if viewCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "get"),
+		"view",
+		"asc testflight agreements view [flags]",
+		"asc testflight agreements view",
+		"Warning: `asc testflight beta-license-agreements view` is deprecated. Use `asc testflight agreements view`.",
+	); viewCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, viewCmd)
+	}
+	if editCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "update"),
+		"edit",
+		"asc testflight agreements edit [flags]",
+		"asc testflight agreements edit",
+		"Warning: `asc testflight beta-license-agreements edit` is deprecated. Use `asc testflight agreements edit`.",
+	); editCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, editCmd)
+	}
 	return cmd
 }
 
 func DeprecatedBetaNotificationsAliasCommand() *ffcli.Command {
 	cmd := deprecatedAliasCommand(
-		rewriteCommandPresentation(
+		rewriteCommandStringsOnly(
 			BetaNotificationsCommand(),
 			"asc testflight beta-notifications",
 			"asc testflight notifications",
@@ -806,6 +921,15 @@ func DeprecatedBetaNotificationsAliasCommand() *ffcli.Command {
 	)
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
 	markDeprecatedSubcommands(cmd)
+	if sendCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "create"),
+		"send",
+		"asc testflight notifications send --build \"BUILD_ID\"",
+		"asc testflight notifications send",
+		"Warning: `asc testflight beta-notifications send` is deprecated. Use `asc testflight notifications send`.",
+	); sendCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, sendCmd)
+	}
 	return cmd
 }
 
@@ -931,7 +1055,7 @@ Examples:
 
 func DeprecatedTestFlightSyncAliasCommand() *ffcli.Command {
 	cmd := deprecatedAliasCommand(
-		rewriteCommandPresentation(
+		rewriteCommandStringsOnly(
 			TestFlightSyncCommand(),
 			"asc testflight sync",
 			"asc testflight config",
@@ -946,5 +1070,14 @@ func DeprecatedTestFlightSyncAliasCommand() *ffcli.Command {
 	)
 	setUsageFuncRecursively(cmd, shared.DeprecatedUsageFunc)
 	markDeprecatedSubcommands(cmd)
+	if exportCmd := shared.DeprecatedAliasLeafCommand(
+		findSubcommand(cmd, "pull"),
+		"export",
+		"asc testflight config export [flags]",
+		"asc testflight config export",
+		"Warning: `asc testflight sync export` is deprecated. Use `asc testflight config export`.",
+	); exportCmd != nil {
+		cmd.Subcommands = append(cmd.Subcommands, exportCmd)
+	}
 	return cmd
 }

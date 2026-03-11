@@ -1162,6 +1162,104 @@ func TestLegacyFeedbackAndCrashAliasesWarnAndDelegate(t *testing.T) {
 	}
 }
 
+func TestDeprecatedTestFlightRootsAcceptCanonicalChildCommands(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantErr string
+	}{
+		{
+			name:    "beta groups root accepts view",
+			args:    []string{"testflight", "beta-groups", "view"},
+			wantErr: "--id is required",
+		},
+		{
+			name:    "beta groups root accepts edit",
+			args:    []string{"testflight", "beta-groups", "edit"},
+			wantErr: "--id is required",
+		},
+		{
+			name:    "beta groups app accepts view",
+			args:    []string{"testflight", "beta-groups", "app", "view"},
+			wantErr: "--group-id is required",
+		},
+		{
+			name:    "beta groups recruitment accepts view",
+			args:    []string{"testflight", "beta-groups", "beta-recruitment-criteria", "view"},
+			wantErr: "--group-id is required",
+		},
+		{
+			name:    "beta groups compatibility accepts view",
+			args:    []string{"testflight", "beta-groups", "beta-recruitment-criterion-compatible-build-check", "view"},
+			wantErr: "--group-id is required",
+		},
+		{
+			name:    "beta testers root accepts view",
+			args:    []string{"testflight", "beta-testers", "view"},
+			wantErr: "--id is required",
+		},
+		{
+			name:    "beta details root accepts view",
+			args:    []string{"testflight", "beta-details", "view"},
+			wantErr: "--build is required",
+		},
+		{
+			name:    "beta details nested build accepts view",
+			args:    []string{"testflight", "beta-details", "build", "view"},
+			wantErr: "--id is required",
+		},
+		{
+			name:    "beta agreements root accepts view",
+			args:    []string{"testflight", "beta-license-agreements", "view"},
+			wantErr: "--id or --app is required",
+		},
+		{
+			name:    "beta agreements root accepts edit",
+			args:    []string{"testflight", "beta-license-agreements", "edit"},
+			wantErr: "--id is required",
+		},
+		{
+			name:    "beta notifications root accepts send",
+			args:    []string{"testflight", "beta-notifications", "send"},
+			wantErr: "--build is required",
+		},
+		{
+			name:    "sync root accepts export",
+			args:    []string{"testflight", "sync", "export"},
+			wantErr: "--app is required",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Setenv("ASC_APP_ID", "")
+			root := RootCommand("1.2.3")
+			root.FlagSet.SetOutput(io.Discard)
+
+			var runErr error
+			stdout, stderr := captureOutput(t, func() {
+				if err := root.Parse(test.args); err != nil {
+					t.Fatalf("parse error: %v", err)
+				}
+				runErr = root.Run(context.Background())
+			})
+
+			if !errors.Is(runErr, flag.ErrHelp) {
+				t.Fatalf("expected ErrHelp, got %v", runErr)
+			}
+			if stdout != "" {
+				t.Fatalf("expected empty stdout, got %q", stdout)
+			}
+			if strings.Contains(stderr, `unknown subcommand "`) {
+				t.Fatalf("expected deprecated root to accept canonical child command, got %q", stderr)
+			}
+			if !strings.Contains(stderr, test.wantErr) {
+				t.Fatalf("expected stderr to contain %q, got %q", test.wantErr, stderr)
+			}
+		})
+	}
+}
+
 func TestLegacyAliasesAcceptCanonicalFlags(t *testing.T) {
 	setupAuth(t)
 	t.Setenv("ASC_CONFIG_PATH", filepath.Join(t.TempDir(), "nonexistent.json"))
