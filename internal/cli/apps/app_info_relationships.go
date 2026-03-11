@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -100,7 +99,7 @@ Examples:
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
 		Exec: func(ctx context.Context, args []string) error {
-			infoIDValue, err := resolveLegacyIDAlias(*infoID, *legacyID)
+			infoIDValue, err := resolveInfoIDFlags(*infoID, *legacyID, "--id")
 			if err != nil {
 				return shared.UsageError(err.Error())
 			}
@@ -131,16 +130,4 @@ Examples:
 			return shared.PrintOutput(resp, *output.Output, *output.Pretty)
 		},
 	}
-}
-
-func resolveLegacyIDAlias(infoID, legacyID string) (string, error) {
-	infoIDValue := strings.TrimSpace(infoID)
-	legacyValue := strings.TrimSpace(legacyID)
-	if infoIDValue != "" && legacyValue != "" && infoIDValue != legacyValue {
-		return "", fmt.Errorf("--info-id and --id are mutually exclusive")
-	}
-	if infoIDValue != "" {
-		return infoIDValue, nil
-	}
-	return legacyValue, nil
 }

@@ -66,7 +66,7 @@ Examples:
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
 		Exec: func(ctx context.Context, args []string) error {
-			infoIDValue, err := resolveLegacyIDAlias(*infoID, *legacyID)
+			infoIDValue, err := resolveInfoIDFlags(*infoID, *legacyID, "--id")
 			if err != nil {
 				return shared.UsageError(err.Error())
 			}

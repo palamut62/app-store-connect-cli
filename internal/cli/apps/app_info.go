@@ -86,7 +86,7 @@ Examples:
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
 		Exec: func(ctx context.Context, args []string) error {
-			infoIDValue, err := resolveInfoIDFlags(*infoID, *legacyAppInfoID)
+			infoIDValue, err := resolveInfoIDFlags(*infoID, *legacyAppInfoID, "--app-info")
 			if err != nil {
 				return shared.UsageError(err.Error())
 			}
@@ -404,11 +404,11 @@ Examples:
 	}
 }
 
-func resolveInfoIDFlags(infoID, legacyAppInfoID string) (string, error) {
+func resolveInfoIDFlags(infoID, legacyValue, legacyFlagName string) (string, error) {
 	infoIDValue := strings.TrimSpace(infoID)
-	legacyValue := strings.TrimSpace(legacyAppInfoID)
+	legacyValue = strings.TrimSpace(legacyValue)
 	if infoIDValue != "" && legacyValue != "" && infoIDValue != legacyValue {
-		return "", fmt.Errorf("--info-id and --app-info are mutually exclusive")
+		return "", fmt.Errorf("--info-id and %s are mutually exclusive", legacyFlagName)
 	}
 	if infoIDValue != "" {
 		return infoIDValue, nil
