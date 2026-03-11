@@ -143,8 +143,6 @@ Use `asc <command> --help` for subcommands and flags.
 - `versions` - Manage App Store versions.
 - `product-pages` - Manage custom product pages and product page experiments.
 - `routing-coverage` - Manage routing app coverage files.
-- `app-info` - Manage App Store version metadata.
-- `app-infos` - List app info records for an app.
 - `eula` - Manage End User License Agreements (EULA).
 - `agreements` - Manage agreements in App Store Connect.
 - `pricing` - Manage app pricing and availability.
@@ -156,7 +154,6 @@ Use `asc <command> --help` for subcommands and flags.
 - `background-assets` - Manage background assets.
 - `build-localizations` - Manage build release notes localizations.
 - `beta-app-localizations` - Manage TestFlight beta app localizations.
-- `beta-build-localizations` - Manage TestFlight beta build localizations.
 - `sandbox` - Manage sandbox testers in App Store Connect.
 - `video-previews` - Manage App Store app preview videos.
 - `signing` - Manage signing certificates and profiles.

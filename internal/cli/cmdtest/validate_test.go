@@ -48,6 +48,8 @@ type validateFixture struct {
 	pricesStatusBySubscription map[string]int
 	priceErrorBySubscription   map[string]error
 	subscriptionGroupsStatus   int
+	iaps                       string
+	iapsStatus                 int
 }
 
 func newValidateTestClient(t *testing.T, fixture validateFixture) *asc.Client {
@@ -84,7 +86,7 @@ func newValidateTestClient(t *testing.T, fixture validateFixture) *asc.Client {
 			return jsonResponse(http.StatusOK, `{"data":null}`)
 		case path == "/v1/appStoreVersions/ver-1/appStoreVersionLocalizations":
 			return jsonResponse(http.StatusOK, fixture.versionLocs)
-		case path == "/v1/appStoreVersions/ver-1/ageRatingDeclaration":
+		case path == "/v1/appInfos/info-1/ageRatingDeclaration":
 			return jsonResponse(http.StatusOK, fixture.ageRating)
 		case path == "/v1/appStoreVersions/ver-1/appStoreReviewDetail":
 			if fixture.reviewDetails != "" {
@@ -180,6 +182,14 @@ func newValidateTestClient(t *testing.T, fixture validateFixture) *asc.Client {
 				return jsonResponse(http.StatusOK, body)
 			}
 			return jsonResponse(http.StatusOK, `{"data":[]}`)
+		case path == "/v1/apps/app-1/inAppPurchasesV2":
+			if fixture.iapsStatus != 0 {
+				return jsonResponse(fixture.iapsStatus, apiErrorJSONForStatus(fixture.iapsStatus))
+			}
+			if fixture.iaps != "" {
+				return jsonResponse(http.StatusOK, fixture.iaps)
+			}
+			return jsonResponse(http.StatusOK, `{"data":[]}`)
 		}
 
 		return jsonResponse(http.StatusNotFound, `{"errors":[{"status":404}]}`)
@@ -230,7 +240,7 @@ func validValidateFixture() validateFixture {
 	return validateFixture{
 		app:             `{"data":{"type":"apps","id":"app-1","attributes":{"primaryLocale":"en-US"}}}`,
 		versions:        `{"data":[{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0"}}]}`,
-		version:         `{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"PREPARE_FOR_SUBMISSION"}}}`,
+		version:         `{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"PREPARE_FOR_SUBMISSION"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}}`,
 		appInfos:        `{"data":[{"type":"appInfos","id":"info-1","attributes":{"state":"PREPARE_FOR_SUBMISSION"}}]}`,
 		appInfoLocs:     `{"data":[{"type":"appInfoLocalizations","id":"info-loc-1","attributes":{"locale":"en-US","name":"My App","subtitle":"Subtitle","privacyPolicyUrl":"https://example.com/privacy"}}]}`,
 		versionLocs:     `{"data":[{"type":"appStoreVersionLocalizations","id":"ver-loc-1","attributes":{"locale":"en-US","description":"Description","keywords":"keyword","whatsNew":"Notes","promotionalText":"Promo","supportUrl":"https://support.example.com","marketingUrl":"https://marketing.example.com"}}]}`,
@@ -913,7 +923,7 @@ func TestValidateWarnsWhenPrivacyPolicyURLMissing(t *testing.T) {
 
 func TestValidateFailsForNonEditableVersionState(t *testing.T) {
 	fixture := validValidateFixture()
-	fixture.version = `{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"WAITING_FOR_REVIEW"}}}`
+	fixture.version = `{"data":{"type":"appStoreVersions","id":"ver-1","attributes":{"platform":"IOS","versionString":"1.0","appVersionState":"WAITING_FOR_REVIEW"},"relationships":{"app":{"data":{"type":"apps","id":"app-1"}}}}}`
 
 	client := newValidateTestClient(t, fixture)
 	restore := validate.SetClientFactory(func() (*asc.Client, error) {
@@ -1532,5 +1542,188 @@ func TestValidateWarnsPartialSubscriptionPricingCoverage(t *testing.T) {
 	}
 	if !hasCheckWithID(report.Checks, "subscriptions.pricing.partial_territory_coverage") {
 		t.Fatalf("expected pricing coverage warning, got %+v", report.Checks)
+	}
+}
+
+func TestValidateIncludesIAPChecks(t *testing.T) {
+	fixture := validValidateFixture()
+	fixture.iaps = `{"data":[
+		{"type":"inAppPurchases","id":"iap-1","attributes":{"name":"Coins","productId":"com.example.coins","inAppPurchaseType":"CONSUMABLE","state":"MISSING_METADATA"}},
+		{"type":"inAppPurchases","id":"iap-2","attributes":{"name":"Premium","productId":"com.example.premium","inAppPurchaseType":"NON_CONSUMABLE","state":"APPROVED"}}
+	]}`
+
+	client := newValidateTestClient(t, fixture)
+	restore := validate.SetClientFactory(func() (*asc.Client, error) {
+		return client, nil
+	})
+	defer restore()
+
+	root := RootCommand("1.2.3")
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"validate", "--app", "app-1", "--version-id", "ver-1"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		// May return error due to IAP warning in strict mode, ignore for this test.
+		_ = root.Run(context.Background())
+	})
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	var report validation.Report
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
+	}
+	if !hasCheckWithID(report.Checks, "iap.review_readiness.needs_attention") {
+		t.Fatalf("expected iap.review_readiness.needs_attention check for MISSING_METADATA IAP, got %+v", report.Checks)
+	}
+	// Verify only the MISSING_METADATA one triggered, not the APPROVED one.
+	count := 0
+	for _, check := range report.Checks {
+		if check.ID == "iap.review_readiness.needs_attention" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Fatalf("expected exactly 1 IAP warning, got %d", count)
+	}
+}
+
+func TestValidateSkipsIAPGracefullyWhenForbidden(t *testing.T) {
+	fixture := validValidateFixture()
+	fixture.iapsStatus = http.StatusForbidden
+
+	client := newValidateTestClient(t, fixture)
+	restore := validate.SetClientFactory(func() (*asc.Client, error) {
+		return client, nil
+	})
+	defer restore()
+
+	root := RootCommand("1.2.3")
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"validate", "--app", "app-1", "--version-id", "ver-1"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		if err := root.Run(context.Background()); err != nil {
+			t.Fatalf("expected IAP forbidden to be non-blocking, got %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	var report validation.Report
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
+	}
+	if !hasCheckWithID(report.Checks, "iap.readiness.unverified") {
+		t.Fatalf("expected iap.readiness.unverified info check, got %+v", report.Checks)
+	}
+	if report.Summary.Errors != 0 {
+		t.Fatalf("expected no blocking errors when IAP is forbidden, got %+v", report.Summary)
+	}
+}
+
+func TestValidateSkipsIAPGracefullyWhenUnauthorized(t *testing.T) {
+	fixture := validValidateFixture()
+	fixture.iapsStatus = http.StatusUnauthorized
+
+	client := newValidateTestClient(t, fixture)
+	restore := validate.SetClientFactory(func() (*asc.Client, error) {
+		return client, nil
+	})
+	defer restore()
+
+	root := RootCommand("1.2.3")
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"validate", "--app", "app-1", "--version-id", "ver-1"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		if err := root.Run(context.Background()); err != nil {
+			t.Fatalf("expected IAP unauthorized to be non-blocking, got %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	var report validation.Report
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
+	}
+	if !hasCheckWithID(report.Checks, "iap.readiness.unverified") {
+		t.Fatalf("expected iap.readiness.unverified info check, got %+v", report.Checks)
+	}
+	if report.Summary.Errors != 0 {
+		t.Fatalf("expected no blocking errors when IAP is unauthorized, got %+v", report.Summary)
+	}
+}
+
+func TestValidateSkipsIAPGracefullyWhenRateLimited(t *testing.T) {
+	fixture := validValidateFixture()
+	fixture.iapsStatus = http.StatusTooManyRequests
+
+	client := newValidateTestClient(t, fixture)
+	restore := validate.SetClientFactory(func() (*asc.Client, error) {
+		return client, nil
+	})
+	defer restore()
+
+	root := RootCommand("1.2.3")
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"validate", "--app", "app-1", "--version-id", "ver-1"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		if err := root.Run(context.Background()); err != nil {
+			t.Fatalf("expected IAP rate limiting to be non-blocking, got %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	var report validation.Report
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
+	}
+	if !hasCheckWithID(report.Checks, "iap.readiness.unverified") {
+		t.Fatalf("expected iap.readiness.unverified info check, got %+v", report.Checks)
+	}
+	if report.Summary.Errors != 0 {
+		t.Fatalf("expected no blocking errors when IAP is rate limited, got %+v", report.Summary)
+	}
+}
+
+func TestValidateNoIAPChecksWhenAppHasNoIAPs(t *testing.T) {
+	fixture := validValidateFixture()
+	// No IAPs set (default empty)
+
+	client := newValidateTestClient(t, fixture)
+	restore := validate.SetClientFactory(func() (*asc.Client, error) {
+		return client, nil
+	})
+	defer restore()
+
+	root := RootCommand("1.2.3")
+	stdout, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"validate", "--app", "app-1", "--version-id", "ver-1"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		if err := root.Run(context.Background()); err != nil {
+			t.Fatalf("run error: %v", err)
+		}
+	})
+	if stderr != "" {
+		t.Fatalf("expected empty stderr, got %q", stderr)
+	}
+
+	var report validation.Report
+	if err := json.Unmarshal([]byte(stdout), &report); err != nil {
+		t.Fatalf("failed to parse JSON output: %v", err)
+	}
+	for _, check := range report.Checks {
+		if strings.HasPrefix(check.ID, "iap.") {
+			t.Fatalf("expected no IAP checks when app has no IAPs, got %+v", check)
+		}
 	}
 }
