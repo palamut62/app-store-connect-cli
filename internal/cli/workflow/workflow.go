@@ -58,17 +58,15 @@ Example workflow file (.asc/workflow.json):
       },
       "steps": [
         {
-          "name": "list_builds",
-          "run": "asc builds list --app $APP_ID --sort -uploadedDate --limit 5"
-        },
-        {
-          "name": "list_groups",
-          "run": "asc testflight groups list --app $APP_ID --limit 20"
+          "name": "resolve_build",
+          "run": "asc builds latest --app $APP_ID --platform IOS --output json",
+          "outputs": {
+            "BUILD_ID": "$.id"
+          }
         },
         {
           "name": "add_build_to_group",
-          "if": "BUILD_ID",
-          "run": "asc builds add-groups --build $BUILD_ID --group $GROUP_ID"
+          "run": "asc builds add-groups --build ${steps.resolve_build.BUILD_ID} --group $GROUP_ID"
         }
       ]
     },
@@ -108,6 +106,7 @@ Try it:
   asc workflow list
   asc workflow run --dry-run beta
   asc workflow run beta BUILD_ID:123456789 GROUP_ID:abcdef
+  asc workflow run release --resume beta-20260312T120000Z-deadbeef
 
 More docs: https://github.com/rudrankriyam/App-Store-Connect-CLI/blob/main/docs/WORKFLOWS.md
 
@@ -117,7 +116,8 @@ Examples:
   asc workflow run beta
   asc workflow run beta SUBMIT_BETA:true
   asc workflow run release VERSION:2.1.0
-  asc workflow run --dry-run beta`,
+  asc workflow run --dry-run beta
+  asc workflow run release --resume beta-20260312T120000Z-deadbeef`,
 		FlagSet:   fs,
 		UsageFunc: shared.DefaultUsageFunc,
 		Subcommands: []*ffcli.Command{
@@ -136,6 +136,7 @@ func workflowRunCommand() *ffcli.Command {
 	filePath := fs.String("file", wf.DefaultPath, "Path to workflow.json")
 	dryRun := fs.Bool("dry-run", false, "Preview steps without executing")
 	pretty := fs.Bool("pretty", false, "Pretty-print JSON output")
+	resume := fs.String("resume", "", "Resume a prior workflow run by run ID")
 
 	return &ffcli.Command{
 		Name:       "run",
@@ -143,10 +144,15 @@ func workflowRunCommand() *ffcli.Command {
 		ShortHelp:  "Run a named workflow.",
 		LongHelp: `Run a named workflow from workflow.json.
 
+Run state is persisted in a repo-local runs directory next to the workflow file.
+Use --resume with the emitted run ID to continue a partially completed run without
+rerunning already-persisted successful steps.
+
 Security note:
   Workflows intentionally execute arbitrary shell commands.
   Only run workflow files you trust (especially when using --file).
   In CI, avoid running workflows on untrusted PRs with secrets/tokens.
+  Declared step outputs are persisted in the run-state file; do not map secrets into outputs.
 
 Tip: See "asc workflow --help" for a complete workflow.json example.`,
 		FlagSet:   fs,
@@ -176,11 +182,22 @@ Tip: See "asc workflow --help" for a complete workflow.json example.`,
 			if err != nil {
 				return shared.UsageErrorf("%s", err)
 			}
+			if *dryRun && strings.TrimSpace(*resume) != "" {
+				return shared.UsageError("--resume cannot be used with --dry-run")
+			}
+			if strings.TrimSpace(*resume) != "" && len(paramArgs) > 0 {
+				return shared.UsageError("resume runs do not accept additional KEY:VALUE parameters")
+			}
+
+			stateDir := filepath.Join(filepath.Dir(absPath), "runs")
 
 			result, err := wf.Run(ctx, def, wf.RunOptions{
 				WorkflowName: workflowName,
 				Params:       params,
 				DryRun:       *dryRun,
+				WorkflowFile: absPath,
+				StateDir:     stateDir,
+				ResumeRunID:  strings.TrimSpace(*resume),
 				// Keep stdout machine-parseable JSON; stream step output to stderr.
 				Stdout: os.Stderr,
 				Stderr: os.Stderr,
@@ -327,19 +344,19 @@ func parseRunTailArgs(args []string, fs *flag.FlagSet) ([]string, error) {
 					return nil, shared.UsageErrorf("invalid value for --%s: %v", name, err)
 				}
 				continue
-			case "file":
+			case "file", "resume":
 				if !hasValue {
 					if i+1 >= len(args) {
-						return nil, shared.UsageError("--file requires a value")
+						return nil, shared.UsageErrorf("--%s requires a value", name)
 					}
 					if isRunTailFlagToken(args[i+1]) || strings.HasPrefix(args[i+1], "--") {
-						return nil, shared.UsageError("--file requires a value")
+						return nil, shared.UsageErrorf("--%s requires a value", name)
 					}
 					i++
 					value = args[i]
 				}
 				if strings.TrimSpace(value) == "" {
-					return nil, shared.UsageError("--file requires a value")
+					return nil, shared.UsageErrorf("--%s requires a value", name)
 				}
 				if err := fs.Set(name, value); err != nil {
 					return nil, shared.UsageErrorf("invalid value for --%s: %v", name, err)
@@ -366,7 +383,7 @@ func isRunTailFlagToken(token string) bool {
 	nameValue := strings.TrimPrefix(token, "--")
 	name, _, _ := strings.Cut(nameValue, "=")
 	switch name {
-	case "dry-run", "pretty", "file":
+	case "dry-run", "pretty", "file", "resume":
 		return true
 	default:
 		return false

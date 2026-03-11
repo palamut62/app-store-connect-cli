@@ -981,6 +981,119 @@ func TestWorkflowRun_NoHooks_OmitsHooksKey(t *testing.T) {
 	}
 }
 
+func TestWorkflowRun_ResumeFlagAfterName(t *testing.T) {
+	dir := t.TempDir()
+	flagPath := filepath.Join(dir, "allow")
+	path := writeWorkflowJSON(t, dir, `{
+		"workflows": {
+			"release": {
+				"steps": [
+					{
+						"name": "upload",
+						"run": "printf '{\"buildId\":\"build-42\"}'",
+						"outputs": {
+							"BUILD_ID": "$.buildId"
+						}
+					},
+					{
+						"name": "distribute",
+						"run": "if [ -f `+flagPath+` ] && [ ${steps.upload.BUILD_ID} = 'build-42' ]; then echo distributed; else exit 9; fi"
+					}
+				]
+			}
+		}
+	}`)
+
+	root1 := RootCommand("1.2.3")
+	root1.FlagSet.SetOutput(io.Discard)
+
+	stdout1, _ := captureOutput(t, func() {
+		if err := root1.Parse([]string{"workflow", "run", "--file", path, "release"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		err := root1.Run(context.Background())
+		if err == nil {
+			t.Fatal("expected first run error")
+		}
+		if _, ok := errors.AsType[ReportedError](err); !ok {
+			t.Fatalf("expected ReportedError, got %v", err)
+		}
+	})
+
+	var first map[string]any
+	if err := json.Unmarshal([]byte(stdout1), &first); err != nil {
+		t.Fatalf("expected JSON stdout, got %q: %v", stdout1, err)
+	}
+	runID, _ := first["run_id"].(string)
+	if strings.TrimSpace(runID) == "" {
+		t.Fatalf("expected run_id in first result, got %v", first["run_id"])
+	}
+
+	if err := os.WriteFile(flagPath, []byte("ok"), 0o600); err != nil {
+		t.Fatalf("write resume flag: %v", err)
+	}
+
+	root2 := RootCommand("1.2.3")
+	root2.FlagSet.SetOutput(io.Discard)
+
+	stdout2, _ := captureOutput(t, func() {
+		if err := root2.Parse([]string{"workflow", "run", "--file", path, "release", "--resume", runID}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		if err := root2.Run(context.Background()); err != nil {
+			t.Fatalf("resume run error: %v", err)
+		}
+	})
+
+	var resumed map[string]any
+	if err := json.Unmarshal([]byte(stdout2), &resumed); err != nil {
+		t.Fatalf("expected JSON stdout, got %q: %v", stdout2, err)
+	}
+	if resumed["status"] != "ok" {
+		t.Fatalf("expected resumed status=ok, got %v", resumed["status"])
+	}
+	if resumed["resumed"] != true {
+		t.Fatalf("expected resumed=true, got %v", resumed["resumed"])
+	}
+	steps, ok := resumed["steps"].([]any)
+	if !ok || len(steps) < 1 {
+		t.Fatalf("expected steps array, got %T: %v", resumed["steps"], resumed["steps"])
+	}
+	firstStep, ok := steps[0].(map[string]any)
+	if !ok {
+		t.Fatalf("expected step object, got %T: %v", steps[0], steps[0])
+	}
+	if firstStep["status"] != "resumed" {
+		t.Fatalf("expected first step status resumed, got %v", firstStep["status"])
+	}
+}
+
+func TestWorkflowRun_ResumeFlagAfterName_MissingValue(t *testing.T) {
+	dir := t.TempDir()
+	path := writeWorkflowJSON(t, dir, `{
+		"workflows": {
+			"beta": {"steps": ["echo hello"]}
+		}
+	}`)
+
+	root := RootCommand("1.2.3")
+	root.FlagSet.SetOutput(io.Discard)
+
+	_, stderr := captureOutput(t, func() {
+		if err := root.Parse([]string{"workflow", "run", "--file", path, "beta", "--resume"}); err != nil {
+			t.Fatalf("parse error: %v", err)
+		}
+		err := root.Run(context.Background())
+		if !errors.Is(err, flag.ErrHelp) {
+			t.Fatalf("expected ErrHelp, got %v", err)
+		}
+	})
+
+	if !strings.Contains(stderr, "--resume requires a value") {
+		t.Fatalf("expected missing resume value error, got %q", stderr)
+	}
+}
+
 func TestWorkflowRun_StepFailure_PartialJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := writeWorkflowJSON(t, dir, `{

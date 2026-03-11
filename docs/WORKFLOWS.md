@@ -18,6 +18,7 @@ asc workflow validate
 ```bash
 asc workflow run beta
 asc workflow run beta BUILD_ID:123456789 GROUP_ID:abcdef
+asc workflow run beta --resume beta-20260312T120000Z-deadbeef
 ```
 
 ## Security and Trust Model
@@ -33,6 +34,7 @@ Workflows intentionally execute arbitrary shell commands. This is by design: `as
 - Step commands inherit your process environment (`os.Environ()`), so secrets present in the environment are visible to steps.
 - Avoid printing secrets in commands; prefer passing secrets as env vars via your CI secret store.
 - Treat params as untrusted input. Quote expansions in shell commands to avoid injection issues (e.g., `--app "$APP_ID"` not `--app $APP_ID`).
+- Declared step outputs are persisted to a repo-local run-state file. Do not map secret plaintext into `outputs`.
 - `asc workflow validate` checks structure and references, not safety of the commands.
 
 ## Example `.asc/workflow.json`
@@ -59,17 +61,15 @@ Notes:
       },
       "steps": [
         {
-          "name": "list_builds",
-          "run": "asc builds list --app $APP_ID --sort -uploadedDate --limit 5"
-        },
-        {
-          "name": "list_groups",
-          "run": "asc testflight groups list --app $APP_ID --limit 20"
+          "name": "resolve_build",
+          "run": "asc builds latest --app $APP_ID --platform IOS --output json",
+          "outputs": {
+            "BUILD_ID": "$.id"
+          }
         },
         {
           "name": "add_build_to_group",
-          "if": "BUILD_ID",
-          "run": "asc builds add-groups --build $BUILD_ID --group $GROUP_ID"
+          "run": "asc builds add-groups --build ${steps.resolve_build.BUILD_ID} --group $GROUP_ID"
         }
       ]
     },
@@ -133,6 +133,66 @@ Hooks are definition-level commands:
 
 Hooks are recorded in the structured JSON output as `hooks.before_all`, `hooks.after_all`, and `hooks.error`.
 
+Successful `before_all` and `after_all` hooks are also persisted in the run-state file so resumed runs do not rerun them unnecessarily.
+
+### Step Outputs
+
+Run steps can declare named outputs extracted from JSON stdout:
+
+```json
+{
+  "name": "upload",
+  "run": "asc publish testflight --app $APP_ID --ipa $IPA --output json",
+  "outputs": {
+    "BUILD_ID": "$.buildId",
+    "PROCESSING_STATE": "$.processingState"
+  }
+}
+```
+
+Rules:
+- `outputs` is only valid on `run` steps.
+- A step with `outputs` must have a unique, reference-safe `name`.
+- Output expressions use a limited JSON path form like `$.field` or `$.nested.field`.
+- The command must emit valid JSON on stdout. For `asc` commands, that usually means passing `--output json`.
+
+Later steps can reference persisted outputs directly in shell commands or sub-workflow `with` values:
+
+```json
+{
+  "name": "distribute",
+  "run": "asc builds add-groups --build ${steps.upload.BUILD_ID} --group $GROUP_ID"
+}
+```
+
+Interpolation is shell-escaped automatically in `run` commands.
+
+### Resume and Run State
+
+Non-dry-run executions persist run state under a repo-local `runs/` directory next to the workflow file.
+
+Each run emits:
+- `run_id`
+- `run_file`
+- `outputs` for declared step outputs
+
+When a run fails after one or more successful persisted steps, the JSON result includes:
+- `failed_step`
+- `recoverable: true`
+- `resume.command`
+
+Resume the run with:
+
+```bash
+asc workflow run release --resume beta-20260312T120000Z-deadbeef
+```
+
+On resume:
+- already-persisted successful steps are reported with `status: "resumed"`
+- declared step outputs are restored before later steps run
+- the workflow definition, workflow file path, and CLI params must still match the original run
+- `--resume` cannot be combined with `--dry-run` or extra `KEY:VALUE` params
+
 ### Output Contract
 
 - stdout: JSON-only (`asc workflow run` prints a structured result)
@@ -143,4 +203,3 @@ This makes it safe to do:
 ```bash
 asc workflow run beta BUILD_ID:123 GROUP_ID:xyz | jq -e '.status == "ok"'
 ```
-
