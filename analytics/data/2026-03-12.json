@@ -1,7 +1,7 @@
 {
   "date": "2026-03-12",
-  "timestamp": "2026-03-12T00:01:00.613554+00:00",
-  "stars": 2769,
+  "timestamp": "2026-03-12T23:58:37.070399+00:00",
+  "stars": 2819,
   "today": {
     "views": 0,
     "views_uniques": 0,
@@ -14,19 +14,112 @@
     "referrers": {},
     "paths": {}
   },
-  "total_downloads": 7624,
+  "total_downloads": 7828,
   "releases": [
+    {
+      "tag": "0.41.0",
+      "published_at": "2026-03-12T22:54:38Z",
+      "assets": [
+        {
+          "name": "asc_0.41.0_checksums.txt",
+          "download_count": 4
+        },
+        {
+          "name": "asc_0.41.0_linux_amd64",
+          "download_count": 3
+        },
+        {
+          "name": "asc_0.41.0_linux_arm64",
+          "download_count": 1
+        },
+        {
+          "name": "asc_0.41.0_macOS_amd64",
+          "download_count": 2
+        },
+        {
+          "name": "asc_0.41.0_macOS_arm64",
+          "download_count": 5
+        },
+        {
+          "name": "asc_0.41.0_windows_amd64.exe",
+          "download_count": 1
+        }
+      ],
+      "total_downloads": 16
+    },
+    {
+      "tag": "0.40.1",
+      "published_at": "2026-03-12T15:35:15Z",
+      "assets": [
+        {
+          "name": "asc_0.40.1_checksums.txt",
+          "download_count": 14
+        },
+        {
+          "name": "asc_0.40.1_linux_amd64",
+          "download_count": 3
+        },
+        {
+          "name": "asc_0.40.1_linux_arm64",
+          "download_count": 0
+        },
+        {
+          "name": "asc_0.40.1_macOS_amd64",
+          "download_count": 1
+        },
+        {
+          "name": "asc_0.40.1_macOS_arm64",
+          "download_count": 39
+        },
+        {
+          "name": "asc_0.40.1_windows_amd64.exe",
+          "download_count": 2
+        }
+      ],
+      "total_downloads": 59
+    },
+    {
+      "tag": "0.40.0",
+      "published_at": "2026-03-12T04:26:02Z",
+      "assets": [
+        {
+          "name": "asc_0.40.0_checksums.txt",
+          "download_count": 9
+        },
+        {
+          "name": "asc_0.40.0_linux_amd64",
+          "download_count": 6
+        },
+        {
+          "name": "asc_0.40.0_linux_arm64",
+          "download_count": 3
+        },
+        {
+          "name": "asc_0.40.0_macOS_amd64",
+          "download_count": 1
+        },
+        {
+          "name": "asc_0.40.0_macOS_arm64",
+          "download_count": 57
+        },
+        {
+          "name": "asc_0.40.0_windows_amd64.exe",
+          "download_count": 1
+        }
+      ],
+      "total_downloads": 77
+    },
     {
       "tag": "0.39.1",
       "published_at": "2026-03-11T12:49:27Z",
       "assets": [
         {
           "name": "asc_0.39.1_checksums.txt",
-          "download_count": 30
+          "download_count": 38
         },
         {
           "name": "asc_0.39.1_linux_amd64",
-          "download_count": 13
+          "download_count": 15
         },
         {
           "name": "asc_0.39.1_linux_arm64",
@@ -38,14 +131,14 @@
         },
         {
           "name": "asc_0.39.1_macOS_arm64",
-          "download_count": 46
+          "download_count": 59
         },
         {
           "name": "asc_0.39.1_windows_amd64.exe",
           "download_count": 0
         }
       ],
-      "total_downloads": 92
+      "total_downloads": 115
     },
     {
       "tag": "0.39.0",
@@ -69,14 +162,14 @@
         },
         {
           "name": "asc_0.39.0_macOS_arm64",
-          "download_count": 18
+          "download_count": 19
         },
         {
           "name": "asc_0.39.0_windows_amd64.exe",
           "download_count": 0
         }
       ],
-      "total_downloads": 24
+      "total_downloads": 25
     },
     {
       "tag": "0.38.3",
@@ -255,14 +348,14 @@
         },
         {
           "name": "asc_0.37.2_macOS_arm64",
-          "download_count": 31
+          "download_count": 32
         },
         {
           "name": "asc_0.37.2_windows_amd64.exe",
           "download_count": 2
         }
       ],
-      "total_downloads": 54
+      "total_downloads": 55
     },
     {
       "tag": "0.37.1",
@@ -313,7 +406,7 @@
         },
         {
           "name": "asc_0.37.0_macOS_amd64",
-          "download_count": 8
+          "download_count": 14
         },
         {
           "name": "asc_0.37.0_macOS_arm64",
@@ -324,7 +417,7 @@
           "download_count": 2
         }
       ],
-      "total_downloads": 83
+      "total_downloads": 89
     },
     {
       "tag": "0.36.3",
@@ -1026,7 +1119,7 @@
         },
         {
           "name": "asc_0.29.0_macOS_amd64",
-          "download_count": 6
+          "download_count": 7
         },
         {
           "name": "asc_0.29.0_macOS_arm64",
@@ -1037,7 +1130,7 @@
           "download_count": 18
         }
       ],
-      "total_downloads": 175
+      "total_downloads": 176
     },
     {
       "tag": "0.28.14",
@@ -1107,11 +1200,11 @@
       "assets": [
         {
           "name": "asc_0.28.12_checksums.txt",
-          "download_count": 97
+          "download_count": 106
         },
         {
           "name": "asc_0.28.12_linux_amd64",
-          "download_count": 48
+          "download_count": 53
         },
         {
           "name": "asc_0.28.12_linux_arm64",
@@ -1123,14 +1216,14 @@
         },
         {
           "name": "asc_0.28.12_macOS_arm64",
-          "download_count": 170
+          "download_count": 175
         },
         {
           "name": "asc_0.28.12_windows_amd64.exe",
           "download_count": 5
         }
       ],
-      "total_downloads": 328
+      "total_downloads": 347
     },
     {
       "tag": "0.28.11",
@@ -3270,7 +3363,7 @@
         },
         {
           "name": "asc-linux-arm64",
-          "download_count": 3
+          "download_count": 4
         },
         {
           "name": "asc-windows-amd64.exe",
@@ -3281,7 +3374,7 @@
           "download_count": 3
         }
       ],
-      "total_downloads": 22
+      "total_downloads": 23
     },
     {
       "tag": "0.1.3",
