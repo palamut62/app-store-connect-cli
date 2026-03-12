@@ -499,6 +499,13 @@
     "platform": ["macOS"]
   },
   {
+    "app": "SwiftyMenu",
+    "link": "https://apps.apple.com/us/app/swiftymenu/id1567748223?mt=12&uo=4",
+    "creator": "lexrus",
+    "icon": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e6/0a/2c/e60a2c36-1e5c-f018-3a56-edc1fd1bfa40/AppIcon.png/512x512bb.png",
+    "platform": ["macOS"]
+  },
+  {
     "app": "Tamloot",
     "link": "https://apps.apple.com/il/app/tamloot/id6758220887",
     "creator": "shalomma",
