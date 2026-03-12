@@ -140,6 +140,7 @@ Use `asc <command> --help` for subcommands and flags.
 - `publish` - End-to-end publish workflows for TestFlight and App Store.
 - `release` - Run high-level App Store release workflows.
 - `workflow` - Run multi-step automation workflows.
+- `xcode` - Produce deterministic `.xcarchive` and `.ipa` artifacts with local Xcode build/export helpers (macOS only).
 - `versions` - Manage App Store versions.
 - `product-pages` - Manage custom product pages and product page experiments.
 - `routing-coverage` - Manage routing app coverage files.

@@ -139,6 +139,7 @@ asc <subcommand> [flags]
 - `status` - Show a release pipeline dashboard for an app.
 - `release-notes` - Generate and manage App Store release notes.
 - `workflow` - Run multi-step automation workflows.
+- `xcode` - Local Xcode archive/export helpers (macOS only).
 - `metadata` - Manage app metadata with deterministic file workflows.
 - `snitch` - Report CLI friction as a GitHub issue.
 

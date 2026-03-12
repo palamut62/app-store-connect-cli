@@ -78,6 +78,7 @@ import (
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/cli/web"
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/cli/webhooks"
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/cli/workflow"
+	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/cli/xcode"
 	"github.com/rudrankriyam/App-Store-Connect-CLI/internal/cli/xcodecloud"
 )
 
@@ -139,6 +140,7 @@ func Subcommands(version string) []*ffcli.Command {
 		publish.PublishCommand(),
 		releasecmd.ReleaseCommand(),
 		workflow.WorkflowCommand(),
+		xcode.XcodeCommand(),
 		versions.VersionsCommand(),
 		productpages.ProductPagesCommand(),
 		routingcoverage.RoutingCoverageCommand(),
